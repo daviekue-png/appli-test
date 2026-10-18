@@ -17,6 +17,14 @@ il s'affiche sous le libellé pendant la recherche, dans l'aide du champ et dans
 récapitulatif. **Aucun montant n'est repris dans l'application** : le fichier source sert
 uniquement à établir le plan budgétaire (catégories, lignes, codes et libellés).
 
+## Démonstration en ligne
+
+L'application est publiée par GitHub Pages :
+**https://daviekue-png.github.io/appli-test/**
+
+Chaque push sur `main` déclenche la reconstruction et le redéploiement par le workflow
+`.github/workflows/deploy.yml` (build Vite puis publication du dossier `dist/`).
+
 ## Démarrage
 
 ```bash
@@ -89,6 +97,7 @@ La recherche des listes ignore la casse et les accents (« evangelisation » tro
 ## Structure
 
 ```
+.github/workflows/deploy.yml     publication automatique sur GitHub Pages
 src/
   App.jsx                        page : plan budgétaire, formulaire, récapitulatif, historique
   main.jsx                       point d'entrée React
