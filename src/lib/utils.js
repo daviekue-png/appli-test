@@ -188,22 +188,38 @@ export function formatLongFR(iso) {
 
 /**
  * Masque de saisie d'une date : les « / » sont ajoutés au fur et à mesure.
- * « 05032026 » devient « 05/03/2026 » ; un séparateur saisi à la main est
- * respecté (« 5/3/2026 » reste possible pour un jour/mois à un chiffre).
+ * « 05032026 » devient « 05/03/2026 ». Pensé pour un clavier numérique : deux
+ * chiffres qui donneraient un jour > 31 ou un mois > 12 sont lus comme un jour
+ * ou un mois à un chiffre complété par un 0 (« 532026 » → « 05/03/2026 »).
+ * Un séparateur saisi à la main reste respecté (« 5/3/2026 »).
  */
 export function maskDateInput(value) {
   const capacity = [2, 2, 4]
+  const maximum = [31, 12, 9999]
   const groups = [[], [], []]
   let group = 0
 
+  const addDigit = (digit) => {
+    // Groupe déjà complet : on passe au suivant.
+    if (groups[group].length >= capacity[group] && group < 2) group += 1
+    // Deux chiffres impossibles (jour > 31, mois > 12) : le premier chiffre
+    // était un jour/mois à un chiffre, on le complète par un 0.
+    if (groups[group].length === 1 && group < 2) {
+      if (Number(groups[group][0] + digit) > maximum[group]) {
+        groups[group].unshift('0')
+        group += 1
+      }
+    }
+    if (groups[group].length < capacity[group]) groups[group].push(digit)
+  }
+
   for (const char of String(value ?? '')) {
-    if (!/\d/.test(char)) {
-      // Un séparateur fait passer au groupe suivant (une seule fois).
-      if (group < 2 && groups[group].length > 0) group += 1
+    if (/\d/.test(char)) {
+      addDigit(char)
       continue
     }
-    if (groups[group].length >= capacity[group] && group < 2) group += 1
-    if (groups[group].length < capacity[group]) groups[group].push(char)
+    // Un séparateur fait passer au groupe suivant (une seule fois).
+    if (group < 2 && groups[group].length > 0) group += 1
   }
 
   return groups

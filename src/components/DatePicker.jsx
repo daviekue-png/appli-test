@@ -501,7 +501,7 @@ export default function DatePicker({
           ref={inputRef}
           className="control__input control__input--date"
           type="text"
-          inputMode="text"
+          inputMode="numeric"
           autoComplete="off"
           spellCheck="false"
           disabled={disabled}

@@ -11,10 +11,10 @@ Trois zones de saisie :
    écrit la sienne. Les lignes déjà saisies pour la catégorie choisie réapparaissent dès
    **2 lettres**, et un libellé inconnu est **proposé à la création**.
 3. **Date de l'opération** — champ avec calendrier : toutes les **dates passées** sont
-   acceptées (utilisable aussi pour une date de naissance) ; saisie directe `jj/mm/aaaa`
-   (les `/` sont ajoutés automatiquement) ; le calendrier **suit la frappe** (jour, mois puis
-   année), et les **mois** / **années** se choisissent aussi en cliquant sur le titre du
-   calendrier. Seules les dates à venir sont refusées.
+   acceptées (utilisable aussi pour une date de naissance) ; **clavier numérique**, saisie
+   directe `jj/mm/aaaa` (les `/` sont ajoutés automatiquement) ; le calendrier **suit la
+   frappe** (jour, mois puis année), et les **mois** / **années** se choisissent aussi en
+   cliquant sur le titre du calendrier. Seules les dates à venir sont refusées.
 
 Chaque catégorie porte un **détail** qui décrit ce qu'elle couvre : il s'affiche sous le
 libellé pendant la recherche, dans l'aide du champ et dans le récapitulatif. **Aucun montant
@@ -83,9 +83,9 @@ les partager entre utilisateurs, il suffit de remplacer `readStore` et `writeSto
 
 ## Règles de saisie de la date
 
-- **Clavier** : le champ accepte un clavier **alphanumérique** (le `/` reste disponible) ;
-  les `/` sont ajoutés automatiquement pendant la frappe — `12032026` devient
-  `12/03/2026`, et un jour/mois à un chiffre reste possible (`5/3/2026`).
+- **Clavier** : clavier **numérique** — les `/` sont ajoutés automatiquement pendant la
+  frappe (`12032026` → `12/03/2026`). Un jour ou un mois à un chiffre est reconnu tout seul
+  (`532026` → `05/03/2026`) ; le `/` reste utilisable sur un clavier physique (`5/3/2026`).
 - **Le calendrier suit la frappe** : le jour saisi est mis en évidence, puis le mois et
   l'année tapés recalent l'affichage du calendrier, sans attendre la validation.
 - **Dates passées** : toutes sont acceptées, sans borne basse (l'exercice budgétaire n'est
@@ -105,7 +105,7 @@ les partager entre utilisateurs, il suffit de remplacer `readStore` et `writeSto
 | Lignes budgétaires | taper **au moins 2 lettres**, `↑` / `↓` pour choisir, `Entrée` : le libellé inconnu est créé après confirmation |
 | Calendrier (jours) | `→` `←` `↑` `↓` (jour / semaine), `Page↑` `Page↓` (mois), `Maj` + `Page↑` (année), `Début` / `Fin` (semaine), `Entrée` (valider) |
 | Calendrier (mois / années) | flèches pour se déplacer, `Entrée` pour descendre d'un niveau |
-| Saisie directe de la date | `12/03/2026` ou `12032026` puis `Entrée` ou `Tab` (le calendrier se recale pendant la frappe) |
+| Saisie directe de la date | clavier numérique : `12032026` ou `12/03/2026` puis `Entrée` ou `Tab` (le calendrier se recale pendant la frappe) |
 
 La recherche des listes ignore la casse et les accents (« evangelisation » trouve
 « Évangélisation »), porte aussi sur les codes budgétaires, et le résultat est surligné.
