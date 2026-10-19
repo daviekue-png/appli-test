@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { matches, splitHighlight } from '../lib/utils'
+import { matches, sameLabel, splitHighlight } from '../lib/utils'
 
 /** Affiche un texte en surlignant la partie qui correspond à la recherche. */
 function Highlight({ text, query }) {
@@ -18,6 +18,10 @@ function Highlight({ text, query }) {
  * options : [{ value, label, description?, keywords?, group? }]
  * - `keywords` : synonymes utilisés pour la recherche uniquement
  * - `group` : permet de créer des rubriques dans la liste
+ *
+ * En mode `creatable`, l'utilisateur écrit lui-même le libellé : les options
+ * déjà enregistrées n'apparaissent qu'à partir de `minChars` lettres, et un
+ * libellé inconnu déclenche une demande de création (`onCreate`).
  */
 export default function SearchableSelect({
   id,
@@ -32,6 +36,14 @@ export default function SearchableSelect({
   hint,
   required = false,
   allowClear = true,
+  creatable = false,
+  minChars = 2,
+  onCreate,
+  onCreated,
+  createHint,
+  createPrompt,
+  createActionLabel = 'Créer',
+  createNote,
 }) {
   const generatedId = useId()
   const inputId = id || `select-${generatedId}`
@@ -41,6 +53,7 @@ export default function SearchableSelect({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [confirming, setConfirming] = useState(null)
 
   const wrapRef = useRef(null)
   const inputRef = useRef(null)
@@ -51,19 +64,38 @@ export default function SearchableSelect({
     [options, value],
   )
 
+  const trimmedQuery = query.trim()
+
+  // En mode libre, on ne propose rien tant que la saisie est trop courte.
+  const showSuggestions = !creatable || trimmedQuery.length >= minChars
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return options
+    if (!showSuggestions) return []
+    if (!trimmedQuery) return options
     return options.filter(
       (option) =>
         matches(option.label, query) ||
         matches(option.description, query) ||
         matches(option.keywords, query),
     )
-  }, [options, query])
+  }, [options, query, trimmedQuery, showSuggestions])
+
+  // Un libellé inconnu peut être créé (jamais en double : casse/accents ignorés).
+  const canCreate = useMemo(
+    () =>
+      Boolean(
+        creatable &&
+          showSuggestions &&
+          trimmedQuery &&
+          onCreate &&
+          !options.some((option) => sameLabel(option.label, trimmedQuery)),
+      ),
+    [creatable, showSuggestions, trimmedQuery, onCreate, options],
+  )
 
   const hasGroups = useMemo(() => options.some((option) => option.group), [options])
 
-  // Liste aplatie : rubriques + options, afin de gérer la navigation clavier.
+  // Liste aplatie : rubriques, options puis « créer », afin de gérer le clavier.
   const items = useMemo(() => {
     const result = []
     let currentGroup
@@ -75,28 +107,33 @@ export default function SearchableSelect({
       }
       result.push({ kind: 'option', key: option.value, option })
     }
+    if (canCreate) result.push({ kind: 'create', key: '__create__', label: trimmedQuery })
     return result
-  }, [filtered, hasGroups])
+  }, [filtered, hasGroups, canCreate, trimmedQuery])
+
+  const isSelectable = (item) => item?.kind === 'option' || item?.kind === 'create'
 
   const selectableIndexes = useMemo(() => {
     const indexes = []
     items.forEach((item, index) => {
-      if (item.kind === 'option') indexes.push(index)
+      if (isSelectable(item)) indexes.push(index)
     })
     return indexes
   }, [items])
 
-  const activeItem = items[activeIndex]?.kind === 'option' ? items[activeIndex] : null
+  const activeItem = isSelectable(items[activeIndex]) ? items[activeIndex] : null
 
   const openList = () => {
     if (disabled) return
     setQuery('')
+    setConfirming(null)
     setOpen(true)
   }
 
   const closeList = () => {
     setOpen(false)
     setQuery('')
+    setConfirming(null)
     setActiveIndex(-1)
   }
 
@@ -114,9 +151,9 @@ export default function SearchableSelect({
 
   // Après un filtrage, garder un index actif valide.
   useEffect(() => {
-    if (!open || selectableIndexes.includes(activeIndex)) return
+    if (!open || confirming || selectableIndexes.includes(activeIndex)) return
     setActiveIndex(selectableIndexes[0] ?? -1)
-  }, [open, selectableIndexes, activeIndex])
+  }, [open, confirming, selectableIndexes, activeIndex])
 
   // Garder l'option active visible.
   useEffect(() => {
@@ -150,6 +187,27 @@ export default function SearchableSelect({
     setActiveIndex(selectableIndexes[nextPosition])
   }
 
+  /** Demande confirmation avant de créer une sous-catégorie inconnue. */
+  const askCreate = (rawLabel) => {
+    const label = String(rawLabel ?? '').trim()
+    if (!label) return
+    setActiveIndex(-1)
+    setConfirming(label)
+  }
+
+  const confirmCreate = () => {
+    const label = confirming
+    if (!label) return
+    const created = onCreate?.(label)
+    setConfirming(null)
+    if (!created) return
+    onChange?.(created.value ?? created.label ?? label)
+    closeList()
+    // Prévenu après la sélection : le message n'est pas écrasé par la mise à jour.
+    onCreated?.(created)
+    inputRef.current?.focus()
+  }
+
   const commit = (option) => {
     if (!option) return
     onChange?.(option.value)
@@ -157,7 +215,24 @@ export default function SearchableSelect({
     inputRef.current?.focus()
   }
 
+  const activate = (item) => {
+    if (item.kind === 'create') askCreate(item.label)
+    else if (item.kind === 'option') commit(item.option)
+  }
+
   const handleKeyDown = (event) => {
+    if (confirming) {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        confirmCreate()
+      } else if (event.key === 'Escape') {
+        event.preventDefault()
+        setConfirming(null)
+        inputRef.current?.focus()
+      }
+      return
+    }
+
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault()
@@ -187,7 +262,7 @@ export default function SearchableSelect({
           openList()
           break
         }
-        if (activeItem) commit(activeItem.option)
+        if (activeItem) activate(activeItem)
         break
       case 'Escape':
         if (open) {
@@ -204,6 +279,12 @@ export default function SearchableSelect({
   }
 
   const displayValue = open ? query : (selected?.label ?? '')
+
+  const activeDescendant = activeItem
+    ? activeItem.kind === 'create'
+      ? `${listId}-create`
+      : `${listId}-option-${activeItem.option.value}`
+    : undefined
 
   return (
     <div
@@ -243,13 +324,12 @@ export default function SearchableSelect({
           aria-autocomplete="list"
           aria-required={required || undefined}
           aria-describedby={hintId}
-          aria-activedescendant={
-            activeItem ? `${listId}-option-${activeItem.option.value}` : undefined
-          }
+          aria-activedescendant={activeDescendant}
           placeholder={open ? searchPlaceholder : placeholder}
           value={displayValue}
           onChange={(event) => {
             setQuery(event.target.value)
+            setConfirming(null)
             if (!open) setOpen(true)
           }}
           onKeyDown={handleKeyDown}
@@ -300,48 +380,118 @@ export default function SearchableSelect({
 
       {open && (
         <div className="popover" onMouseDown={(event) => event.preventDefault()}>
-          <ul className="options" role="listbox" id={listId} ref={listRef} aria-label={label}>
-            {items.length === 0 && (
-              <li className="options__empty">
-                <strong>{emptyMessage}</strong>
-                <span>Aucune correspondance pour « {query} »</span>
-              </li>
-            )}
-
-            {items.map((item, index) =>
-              item.kind === 'group' ? (
-                <li key={item.key} className="options__group" role="presentation">
-                  {item.label ?? 'Autres'}
-                </li>
-              ) : (
-                <li
-                  key={item.key}
-                  id={`${listId}-option-${item.option.value}`}
-                  role="option"
-                  data-index={index}
-                  aria-selected={item.option.value === value}
-                  className={[
-                    'options__item',
-                    index === activeIndex && 'is-active',
-                    item.option.value === value && 'is-selected',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => commit(item.option)}
+          {confirming ? (
+            <div className="options__confirm" role="group" aria-label="Confirmer la création">
+              <p className="options__confirm-text">
+                {createPrompt
+                  ? createPrompt(confirming)
+                  : (
+                      <>
+                        <strong>« {confirming} »</strong> n’existe pas encore.
+                      </>
+                    )}
+              </p>
+              <p className="options__confirm-sub">
+                {createNote ??
+                  `Elle sera créée maintenant, puis proposée les prochaines fois dès ${minChars} lettres.`}
+              </p>
+              <div className="options__confirm-actions">
+                <button
+                  type="button"
+                  className="options__btn options__btn--primary"
+                  onClick={confirmCreate}
                 >
-                  <span className="options__label">
-                    <Highlight text={item.option.label} query={query} />
-                  </span>
-                  {item.option.description && (
-                    <span className="options__desc">
-                      <Highlight text={item.option.description} query={query} />
-                    </span>
+                  {createActionLabel}
+                </button>
+                <button
+                  type="button"
+                  className="options__btn"
+                  onClick={() => {
+                    setConfirming(null)
+                    inputRef.current?.focus()
+                  }}
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ul className="options" role="listbox" id={listId} ref={listRef} aria-label={label}>
+              {items.length === 0 && (
+                <li className="options__empty">
+                  {creatable && !showSuggestions ? (
+                    <>
+                      <strong>{minChars} lettres minimum</strong>
+                      <span>
+                        {createHint ??
+                          `Saisissez au moins ${minChars} lettres pour revoir les sous-catégories déjà enregistrées.`}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <strong>{emptyMessage}</strong>
+                      <span>Aucune correspondance pour « {query} »</span>
+                    </>
                   )}
                 </li>
-              ),
-            )}
-          </ul>
+              )}
+
+              {items.map((item, index) =>
+                item.kind === 'group' ? (
+                  <li key={item.key} className="options__group" role="presentation">
+                    {item.label ?? 'Autres'}
+                  </li>
+                ) : item.kind === 'create' ? (
+                  <li
+                    key={item.key}
+                    id={`${listId}-create`}
+                    role="option"
+                    data-index={index}
+                    aria-selected={false}
+                    className={['options__item', 'options__create', index === activeIndex && 'is-active']
+                      .filter(Boolean)
+                      .join(' ')}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => askCreate(item.label)}
+                  >
+                    <span className="options__label">
+                      <span className="options__create-icon" aria-hidden="true">
+                        +
+                      </span>
+                      Créer « {item.label} »
+                    </span>
+                    <span className="options__desc">Ce libellé n’existe pas encore.</span>
+                  </li>
+                ) : (
+                  <li
+                    key={item.key}
+                    id={`${listId}-option-${item.option.value}`}
+                    role="option"
+                    data-index={index}
+                    aria-selected={item.option.value === value}
+                    className={[
+                      'options__item',
+                      index === activeIndex && 'is-active',
+                      item.option.value === value && 'is-selected',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => commit(item.option)}
+                  >
+                    <span className="options__label">
+                      <Highlight text={item.option.label} query={query} />
+                    </span>
+                    {item.option.description && (
+                      <span className="options__desc">
+                        <Highlight text={item.option.description} query={query} />
+                      </span>
+                    )}
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
         </div>
       )}
     </div>

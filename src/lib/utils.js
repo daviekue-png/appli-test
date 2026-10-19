@@ -185,3 +185,66 @@ export function formatLongFR(iso) {
   ]
   return `${weekday} ${parts.day} ${MONTHS_FR[parts.month]} ${parts.year}`
 }
+
+/**
+ * Masque de saisie d'une date : les « / » sont ajoutés au fur et à mesure.
+ * « 05032026 » devient « 05/03/2026 » ; un séparateur saisi à la main est
+ * respecté (« 5/3/2026 » reste possible pour un jour/mois à un chiffre).
+ */
+export function maskDateInput(value) {
+  const capacity = [2, 2, 4]
+  const groups = [[], [], []]
+  let group = 0
+
+  for (const char of String(value ?? '')) {
+    if (!/\d/.test(char)) {
+      // Un séparateur fait passer au groupe suivant (une seule fois).
+      if (group < 2 && groups[group].length > 0) group += 1
+      continue
+    }
+    if (groups[group].length >= capacity[group] && group < 2) group += 1
+    if (groups[group].length < capacity[group]) groups[group].push(char)
+  }
+
+  return groups
+    .map((digits) => digits.join(''))
+    .join('/')
+    .replace(/\/+$/, '')
+}
+
+/**
+ * Analyse une saisie partielle « jj/mm/aaaa » sans exiger une date complète.
+ * Sert à faire suivre le calendrier pendant la frappe : les éléments non
+ * encore saisis (ou impossibles) restent à null.
+ */
+export function parsePartialDate(text) {
+  const parts = String(text ?? '').split(/[^\d]+/)
+  const result = { day: null, month: null, year: null }
+
+  const day = Number(parts[0])
+  if (parts[0] && day >= 1 && day <= 31) result.day = day
+
+  const month = Number(parts[1])
+  if (parts[1] && month >= 1 && month <= 12) result.month = month - 1
+
+  if (parts[2] && parts[2].length === 4) {
+    const year = Number(parts[2])
+    if (year >= 1000 && year <= 9999) result.year = year
+  }
+
+  return result
+}
+
+/* ---------------------------------------------------------------- textes */
+
+/** Identifiant stable tiré d'un libellé : « Loyer de la salle » → « loyer-de-la-salle ». */
+export function slugify(value) {
+  return fold(value)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/** Compare deux libellés en ignorant casse, accents et espaces superflus. */
+export function sameLabel(a, b) {
+  return normalize(a) === normalize(b)
+}

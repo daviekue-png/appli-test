@@ -9,7 +9,9 @@ import {
   formatFR,
   formatLongFR,
   fromISO,
+  maskDateInput,
   parseDateInput,
+  parsePartialDate,
   toISO,
   todayISO,
 } from '../lib/utils'
@@ -103,6 +105,32 @@ export default function DatePicker({
       return `Date postérieure au ${formatFR(upperBound)} : non autorisée.`
     }
     return null
+  }
+
+  /**
+   * Fait suivre le calendrier à la frappe : le mois puis l'année défilent et
+   * le jour saisi est mis en évidence, sans exiger une date complète.
+   */
+  const followText = (raw) => {
+    const partial = parsePartialDate(raw)
+    if (partial.day === null && partial.month === null && partial.year === null) return
+
+    setNav((current) => {
+      const year = partial.year ?? current.year
+      const month = partial.month ?? current.month
+      const maxDay = new Date(year, month + 1, 0).getDate()
+      const day = partial.day ? Math.min(partial.day, maxDay) : 1
+      return {
+        ...current,
+        view: 'days',
+        year,
+        month,
+        focusMonth: month,
+        focusYear: year,
+        yearStart: Math.floor(year / YEARS_PER_PAGE) * YEARS_PER_PAGE,
+        focused: toISO(year, month, day),
+      }
+    })
   }
 
   const selectDay = (iso) => {
@@ -473,7 +501,7 @@ export default function DatePicker({
           ref={inputRef}
           className="control__input control__input--date"
           type="text"
-          inputMode="numeric"
+          inputMode="text"
           autoComplete="off"
           spellCheck="false"
           disabled={disabled}
@@ -488,11 +516,17 @@ export default function DatePicker({
           placeholder={placeholder}
           value={text}
           onChange={(event) => {
-            const next = event.target.value
+            // Masque jj/mm/aaaa : les « / » s'ajoutent au fil de la frappe.
+            const next = maskDateInput(event.target.value)
             setText(next)
-            // Contrôle immédiat dès que la saisie forme une date complète.
-            const parsed = parseDateInput(next.trim())
+            // Contrôle immédiat, mais seulement sur une date complète : pendant
+            // la frappe (« 05/03/20 »), aucun message d'erreur intempestif.
+            const annee = next.split(/[^\d]+/)[2]
+            const parsed = annee?.length === 4 ? parseDateInput(next.trim()) : null
             setError(parsed ? rangeErrorFor(parsed) : null)
+            // Le calendrier suit la saisie du jour, du mois puis de l'année.
+            followText(next)
+            if (next) setOpen(true)
           }}
           onKeyDown={handleKeyDown}
           onBlur={commitText}

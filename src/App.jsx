@@ -1,14 +1,8 @@
 import { useMemo, useState } from 'react'
 import SearchableSelect from './components/SearchableSelect'
 import DatePicker from './components/DatePicker'
-import {
-  BUDGET,
-  CATEGORIES,
-  SECTIONS,
-  getCategory,
-  getSubCategories,
-  sectionCounts,
-} from './data/budget'
+import { BUDGET, CATEGORIES, SECTIONS, getCategory, sectionCounts } from './data/budget'
+import { MIN_QUERY_LENGTH, useSubCategories } from './lib/subCategories'
 import { formatFR, formatLongFR, todayISO } from './lib/utils'
 
 const emptySelection = { category: null, subCategory: null, date: null }
@@ -28,6 +22,15 @@ export default function App() {
 
   const counts = useMemo(() => sectionCounts(), [])
 
+  // Sous-catégories saisies par l'utilisateur (conservées dans le navigateur).
+  const { listFor, create, counts: subCategoryCounts } = useSubCategories()
+
+  const createdBySection = useMemo(() => {
+    const result = { recettes: 0, depenses: 0 }
+    for (const item of CATEGORIES) result[item.section] += subCategoryCounts[item.value] ?? 0
+    return result
+  }, [subCategoryCounts])
+
   const categoryOptions = useMemo(
     () =>
       CATEGORIES.map((item) => ({
@@ -40,22 +43,25 @@ export default function App() {
     [],
   )
 
+  // Rien n'est proposé d'avance : seules les sous-catégories déjà saisies
+  // pour la catégorie choisie apparaissent (dès MIN_QUERY_LENGTH lettres).
+  const storedSubCategories = useMemo(() => listFor(category), [listFor, category])
+
   const subCategoryOptions = useMemo(
     () =>
-      getSubCategories(category).map((line) => ({
+      storedSubCategories.map((line) => ({
         value: line.value,
         label: line.label,
-        description: `${line.code} · ${line.detail}`,
+        description: `${line.code} · saisie le ${formatFR(line.createdAt)}`,
         keywords: line.code,
       })),
-    [category],
+    [storedSubCategories],
   )
 
   const selectedCategory = getCategory(category)
   const selectedSubCategory =
     subCategoryOptions.find((item) => item.value === subCategory) ?? null
-  const selectedLine =
-    selectedCategory?.subCategories.find((item) => item.value === subCategory) ?? null
+  const selectedLine = storedSubCategories.find((item) => item.value === subCategory) ?? null
 
   const isComplete = Boolean(category && subCategory && date)
 
@@ -67,6 +73,12 @@ export default function App() {
   const handleCategoryChange = (nextCategory) => {
     // La liste des sous-catégories dépend de la catégorie : on la réinitialise.
     update({ category: nextCategory, subCategory: null })
+  }
+
+  /** Crée (si besoin) la sous-catégorie saisie et la renvoie à la liste déroulante. */
+  const handleCreateSubCategory = (rawLabel) => {
+    if (!selectedCategory) return null
+    return create(selectedCategory, rawLabel)
   }
 
   const handleSubmit = () => {
@@ -109,12 +121,12 @@ export default function App() {
         <article className="stat stat--recette">
           <p className="stat__label">Recettes</p>
           <p className="stat__value">{counts.recettes.categories} catégories</p>
-          <p className="stat__meta">{counts.recettes.lines} lignes budgétaires</p>
+          <p className="stat__meta">{createdBySection.recettes} sous-catégories saisies</p>
         </article>
         <article className="stat stat--depense">
           <p className="stat__label">Dépenses</p>
           <p className="stat__value">{counts.depenses.categories} catégories</p>
-          <p className="stat__meta">{counts.depenses.lines} lignes budgétaires</p>
+          <p className="stat__meta">{createdBySection.depenses} sous-catégories saisies</p>
         </article>
         <article className="stat">
           <p className="stat__label">Exercice budgétaire</p>
@@ -144,17 +156,23 @@ export default function App() {
             id="sous-categorie"
             label="2. Sous-catégorie"
             required
-            placeholder={category ? 'Sélectionner une sous-catégorie' : 'Choisissez une catégorie'}
-            searchPlaceholder="Rechercher une ligne budgétaire…"
-            emptyMessage="Ligne introuvable"
+            creatable
+            minChars={MIN_QUERY_LENGTH}
+            onCreate={handleCreateSubCategory}
+            onCreated={(entry) => setFlash(`Sous-catégorie « ${entry.label} » enregistrée.`)}
+            placeholder={category ? 'Saisir la sous-catégorie' : 'Choisissez une catégorie'}
+            searchPlaceholder={`Saisir au moins ${MIN_QUERY_LENGTH} lettres…`}
+            emptyMessage="Aucune sous-catégorie"
             options={subCategoryOptions}
             value={subCategory}
             onChange={(next) => update({ subCategory: next })}
             disabled={!category}
             hint={
               selectedCategory
-                ? `${subCategoryOptions.length} lignes — ${selectedCategory.detail}`
-                : 'La liste dépend de la catégorie sélectionnée.'
+                ? subCategoryOptions.length > 0
+                  ? `${subCategoryOptions.length} sous-catégorie(s) déjà saisie(s) pour « ${selectedCategory.label} » — suggestions dès ${MIN_QUERY_LENGTH} lettres.`
+                  : `Aucune sous-catégorie pour « ${selectedCategory.label} » : saisissez-la, elle sera créée.`
+                : 'Choisissez d’abord une catégorie.'
             }
           />
 
@@ -166,7 +184,7 @@ export default function App() {
             onChange={(next) => update({ date: next })}
             min={exerciseStart <= todayISO() ? exerciseStart : undefined}
             disableFuture
-            hint={`Exercice ${BUDGET.exercice} uniquement. Les dates à venir sont grisées et refusées.`}
+            hint={`Exercice ${BUDGET.exercice} uniquement. Saisissez jj/mm/aaaa : le calendrier suit la frappe. Les dates à venir sont grisées et refusées.`}
           />
         </div>
 
@@ -230,7 +248,11 @@ export default function App() {
                     {selectedSubCategory.label}
                     <span className="recap__muted"> · {selectedLine?.code}</span>
                   </span>
-                  <span className="recap__detail">{selectedLine?.detail}</span>
+                  <span className="recap__detail">
+                    {selectedLine?.createdAt
+                      ? `Sous-catégorie saisie par vous le ${formatFR(selectedLine.createdAt)}`
+                      : selectedLine?.detail}
+                  </span>
                 </>
               ) : (
                 '—'

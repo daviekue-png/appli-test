@@ -474,6 +474,93 @@ body {
   color: var(--text);
 }
 
+/* ------------------------------------------- création d'une sous-catégorie */
+
+.options__create {
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+  padding-top: 11px;
+}
+
+.options__create .options__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.options__create-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.options__confirm {
+  display: grid;
+  gap: 6px;
+  padding: 14px 14px 12px;
+}
+
+.options__confirm-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.options__confirm-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.options__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.options__btn {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.options__btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-soft);
+}
+
+.options__btn--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+}
+
+.options__btn--primary:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  filter: brightness(1.05);
+}
+
 /* ------------------------------------------------------------ calendrier */
 
 .popover--calendar {
