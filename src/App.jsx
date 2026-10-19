@@ -3,15 +3,12 @@ import SearchableSelect from './components/SearchableSelect'
 import DatePicker from './components/DatePicker'
 import { BUDGET, CATEGORIES, SECTIONS, getCategory, sectionCounts } from './data/budget'
 import { MIN_QUERY_LENGTH, useSubCategories } from './lib/subCategories'
-import { formatFR, formatLongFR, todayISO } from './lib/utils'
+import { formatFR, formatLongFR } from './lib/utils'
 
 const emptySelection = { category: null, subCategory: null, date: null }
 
 const sectionLabel = (sectionValue) =>
   SECTIONS.find((section) => section.value === sectionValue)?.label ?? ''
-
-/** Début de l'exercice : une opération doit appartenir au budget en cours. */
-const exerciseStart = `${BUDGET.exercice}-01-01`
 
 export default function App() {
   const [selection, setSelection] = useState(emptySelection)
@@ -182,9 +179,8 @@ export default function App() {
             required
             value={date}
             onChange={(next) => update({ date: next })}
-            min={exerciseStart <= todayISO() ? exerciseStart : undefined}
             disableFuture
-            hint={`Exercice ${BUDGET.exercice} uniquement. Saisissez jj/mm/aaaa : le calendrier suit la frappe. Les dates à venir sont grisées et refusées.`}
+            hint="Toutes les dates passées sont acceptées (saisie jj/mm/aaaa : le calendrier suit la frappe). Les dates à venir sont refusées."
           />
         </div>
 

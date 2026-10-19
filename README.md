@@ -10,9 +10,11 @@ Trois zones de saisie :
 2. **Sous-catégorie** — champ **libre** : rien n'est pré-enregistré, chaque utilisateur écrit
    la sienne. Les sous-catégories déjà saisies pour la catégorie choisie réapparaissent dès
    **2 lettres**, et un libellé inconnu est **proposé à la création**.
-3. **Date de l'opération** — champ avec calendrier : saisie directe `jj/mm/aaaa` (les `/` sont
-   ajoutés automatiquement) ; le calendrier **suit la frappe** (jour, mois puis année), et les
-   **mois** / **années** se choisissent aussi en cliquant sur le titre du calendrier.
+3. **Date de l'opération** — champ avec calendrier : toutes les **dates passées** sont
+   acceptées (utilisable aussi pour une date de naissance) ; saisie directe `jj/mm/aaaa`
+   (les `/` sont ajoutés automatiquement) ; le calendrier **suit la frappe** (jour, mois puis
+   année), et les **mois** / **années** se choisissent aussi en cliquant sur le titre du
+   calendrier. Seules les dates à venir sont refusées.
 
 Chaque catégorie porte un **détail** qui décrit ce qu'elle couvre : il s'affiche sous le
 libellé pendant la recherche, dans l'aide du champ et dans le récapitulatif. **Aucun montant
@@ -86,10 +88,10 @@ les partager entre utilisateurs, il suffit de remplacer `readStore` et `writeSto
   `12/03/2026`, et un jour/mois à un chiffre reste possible (`5/3/2026`).
 - **Le calendrier suit la frappe** : le jour saisi est mis en évidence, puis le mois et
   l'année tapés recalent l'affichage du calendrier, sans attendre la validation.
-- **Dates à venir** : grisées et non cliquables dans le calendrier ; une saisie directe
-  est refusée avec le message « Cette date n'est pas encore arrivée… ».
-- **Hors exercice** : refusé avec « Date antérieure au 01/01/2026 : non autorisée. »
-  (borne `min` calculée depuis `BUDGET.exercice` dans `App.jsx`).
+- **Dates passées** : toutes sont acceptées, sans borne basse (l'exercice budgétaire n'est
+  plus une contrainte de saisie) — le champ convient donc aussi à une **date de naissance**.
+- **Dates à venir** : seul cas refusé ; grisées et non cliquables dans le calendrier, et une
+  saisie directe est rejetée avec « Cette date n'est pas encore arrivée… ».
 - Le message d'erreur n'apparaît que sur une date **complète** : `05/03/20` en cours de
   frappe n'affiche rien.
 - Une date refusée n'est pas transmise : le champ reste modifiable, `Échap` annule la
