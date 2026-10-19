@@ -187,7 +187,7 @@ export default function SearchableSelect({
     setActiveIndex(selectableIndexes[nextPosition])
   }
 
-  /** Demande confirmation avant de créer une sous-catégorie inconnue. */
+  /** Demande confirmation avant de créer une ligne budgétaire inconnue. */
   const askCreate = (rawLabel) => {
     const label = String(rawLabel ?? '').trim()
     if (!label) return
@@ -424,7 +424,7 @@ export default function SearchableSelect({
                       <strong>{minChars} lettres minimum</strong>
                       <span>
                         {createHint ??
-                          `Saisissez au moins ${minChars} lettres pour revoir les sous-catégories déjà enregistrées.`}
+                          `Saisissez au moins ${minChars} lettres pour revoir les lignes budgétaires déjà enregistrées.`}
                       </span>
                     </>
                   ) : (

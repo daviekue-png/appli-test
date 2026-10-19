@@ -474,7 +474,7 @@ body {
   color: var(--text);
 }
 
-/* ------------------------------------------- création d'une sous-catégorie */
+/* ------------------------------------------------- lignes budgétaires */
 
 .options__create {
   border-top: 1px dashed var(--border);

@@ -7,8 +7,8 @@ Trois zones de saisie :
 
 1. **Catégorie budgétaire** — liste déroulante avec recherche intégrée, regroupée par
    **Recettes** et **Dépenses**.
-2. **Sous-catégorie** — champ **libre** : rien n'est pré-enregistré, chaque utilisateur écrit
-   la sienne. Les sous-catégories déjà saisies pour la catégorie choisie réapparaissent dès
+2. **Lignes budgétaires** — champ **libre** : rien n'est pré-enregistré, chaque utilisateur
+   écrit la sienne. Les lignes déjà saisies pour la catégorie choisie réapparaissent dès
    **2 lettres**, et un libellé inconnu est **proposé à la création**.
 3. **Date de l'opération** — champ avec calendrier : toutes les **dates passées** sont
    acceptées (utilisable aussi pour une date de naissance) ; saisie directe `jj/mm/aaaa`
@@ -56,26 +56,26 @@ DRAFT) :
 | Section | Recettes / Dépenses | — |
 | Catégorie | grand poste budgétaire + détail | `REC-01` · Dîmes et offrandes régulières — *Collectes régulières des cultes* |
 
-**Les sous-catégories ne sont plus préparées à l'avance.** Le fichier conserve les lignes du
-plan budgétaire d'origine (codes, libellés, détails, y compris les compléments marqués
+**Les lignes budgétaires ne sont plus préparées à l'avance.** Le fichier conserve les lignes
+du plan budgétaire d'origine (codes, libellés, détails, y compris les compléments marqués
 `suggested: true`) à titre de référence, mais elles **ne sont plus proposées dans le
-formulaire** : chaque utilisateur écrit lui-même ses sous-catégories (voir ci-dessous).
+formulaire** : chaque utilisateur écrit lui-même ses lignes budgétaires (voir ci-dessous).
 
 Helpers exposés par le module : `getCategory(value)`, `getSubCategories(category)` (plus
 utilisé par l'interface) et `sectionCounts()` (nombre de catégories par section).
 
-## Sous-catégories écrites par les utilisateurs
+## Lignes budgétaires écrites par les utilisateurs
 
-- Le champ « Sous-catégorie » est **libre** et reste désactivé tant que la catégorie n'a pas
-  été choisie ; changer de catégorie remet le champ à zéro.
-- Dès **2 lettres**, les sous-catégories **déjà enregistrées pour cette catégorie**
+- Le champ « Lignes budgétaires » est **libre** et reste désactivé tant que la catégorie n'a
+  pas été choisie ; changer de catégorie remet le champ à zéro.
+- Dès **2 lettres**, les lignes budgétaires **déjà enregistrées pour cette catégorie**
   apparaissent dans la liste déroulante (recherche insensible à la casse et aux accents).
 - Si le libellé ne correspond à aucune existante, une entrée **« Créer "…" »** apparaît :
   l'application **demande confirmation** avant de l'enregistrer, puis la sélectionne.
 - La comparaison ignore la casse et les accents : taper `dimes` ne recrée pas `Dîmes`.
 - Un code est attribué automatiquement (`REC-01-01`, `REC-01-02`, …).
 
-Les sous-catégories créées sont conservées **dans le navigateur**
+Les lignes créées sont conservées **dans le navigateur**
 (`localStorage`, clé `budget-2026:sous-categories`), séparément pour chaque catégorie. Elles
 sont donc propres au poste et au navigateur utilisé : l'application n'a pas de serveur. Pour
 les partager entre utilisateurs, il suffit de remplacer `readStore` et `writeStore` dans
@@ -102,7 +102,7 @@ les partager entre utilisateurs, il suffit de remplacer `readStore` et `writeSto
 | Contexte | Touches |
 | --- | --- |
 | Listes déroulantes | `↓` / `↑` (ouverture + navigation), `Entrée` (valider), `Échap` (fermer), `Début` / `Fin`, saisie libre pour filtrer (libellé, mot-clé ou code : `DEP-05`) |
-| Sous-catégorie | taper **au moins 2 lettres**, `↑` / `↓` pour choisir, `Entrée` : le libellé inconnu est créé après confirmation |
+| Lignes budgétaires | taper **au moins 2 lettres**, `↑` / `↓` pour choisir, `Entrée` : le libellé inconnu est créé après confirmation |
 | Calendrier (jours) | `→` `←` `↑` `↓` (jour / semaine), `Page↑` `Page↓` (mois), `Maj` + `Page↑` (année), `Début` / `Fin` (semaine), `Entrée` (valider) |
 | Calendrier (mois / années) | flèches pour se déplacer, `Entrée` pour descendre d'un niveau |
 | Saisie directe de la date | `12/03/2026` ou `12032026` puis `Entrée` ou `Tab` (le calendrier se recale pendant la frappe) |
@@ -120,7 +120,7 @@ src/
   styles.css                     styles (thème clair/sombre automatique)
   data/budget.js                 catégories budgétaires 2026 (plan de référence) + helpers
   lib/utils.js                   recherche sans accents, utilitaires de dates
-  lib/subCategories.js           sous-catégories écrites par les utilisateurs (localStorage)
+  lib/subCategories.js           lignes budgétaires écrites par les utilisateurs (localStorage)
   components/
     SearchableSelect.jsx         liste déroulante avec recherche (+ mode « saisie libre »)
     DatePicker.jsx               champ de date + calendrier

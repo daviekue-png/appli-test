@@ -607,7 +607,7 @@ export const CATEGORIES = [
   },
 ]
 
-/** Sous-catégories (lignes budgétaires) d'une catégorie. */
+/** Lignes budgétaires (sous-catégories) d'une catégorie. */
 export function getSubCategories(categoryValue) {
   const category = CATEGORIES.find((item) => item.value === categoryValue)
   return category ? category.subCategories : []

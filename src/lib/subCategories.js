@@ -1,11 +1,11 @@
 /**
- * Sous-catégories saisies par les utilisateurs.
+ * Lignes budgétaires saisies par les utilisateurs.
  *
- * Aucune sous-catégorie n'est fournie d'avance : c'est l'utilisateur qui les
+ * Aucune ligne budgétaire n'est fournie d'avance : c'est l'utilisateur qui les
  * écrit. La première fois qu'un libellé apparaît, l'application propose de le
  * créer ; ensuite il est proposé dans la liste dès les premières lettres.
  *
- * L'application n'a pas de serveur : les sous-catégories créées sont conservées
+ * L'application n'a pas de serveur : les lignes budgétaires créées sont conservées
  * dans le navigateur (localStorage), séparément pour chaque catégorie
  * budgétaire. Pour les partager entre utilisateurs, il suffira de remplacer
  * `readStore` et `writeStore` par des appels à une API.
@@ -18,7 +18,7 @@ export const SUB_CATEGORIES_STORAGE_KEY = 'budget-2026:sous-categories'
 /** Nombre de lettres à saisir avant que les suggestions apparaissent. */
 export const MIN_QUERY_LENGTH = 2
 
-/** Sous-catégorie déjà créée dont le libellé correspond (casse/accents ignorés). */
+/** Ligne budgétaire déjà créée dont le libellé correspond (casse/accents ignorés). */
 export function findSubCategory(list, label) {
   if (!label) return null
   return list.find((item) => sameLabel(item.label, label)) ?? null
@@ -51,12 +51,12 @@ function writeStore(store) {
 }
 
 /**
- * Accès aux sous-catégories créées.
+ * Accès aux lignes budgétaires créées.
  *
- * - `listFor(categoryValue)` : sous-catégories d'une catégorie ;
- * - `create(category, label)` : crée la sous-catégorie si besoin et la renvoie ;
- * - `counts` : nombre de sous-catégories par catégorie ;
- * - `total` : nombre total de sous-catégories créées.
+ * - `listFor(categoryValue)` : lignes budgétaires d'une catégorie ;
+ * - `create(category, label)` : crée la ligne budgétaire si besoin et la renvoie ;
+ * - `counts` : nombre de lignes budgétaires par catégorie ;
+ * - `total` : nombre total de lignes budgétaires créées.
  */
 export function useSubCategories() {
   const [store, setStore] = useState(readStore)
@@ -80,7 +80,7 @@ export function useSubCategories() {
       if (existing) return existing
 
       const entry = {
-        value: slugify(label) || `sous-categorie-${Date.now()}`,
+        value: slugify(label) || `ligne-budgetaire-${Date.now()}`,
         label,
         code: `${category.code}-${String(current.length + 1).padStart(2, '0')}`,
         createdAt: new Date().toISOString().slice(0, 10),

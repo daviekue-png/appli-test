@@ -10,6 +10,9 @@ const emptySelection = { category: null, subCategory: null, date: null }
 const sectionLabel = (sectionValue) =>
   SECTIONS.find((section) => section.value === sectionValue)?.label ?? ''
 
+/** Choisit la forme singulière ou plurielle d'un libellé. */
+const accord = (count, singulier, pluriel) => (count > 1 ? pluriel : singulier)
+
 export default function App() {
   const [selection, setSelection] = useState(emptySelection)
   const [history, setHistory] = useState([])
@@ -19,7 +22,7 @@ export default function App() {
 
   const counts = useMemo(() => sectionCounts(), [])
 
-  // Sous-catégories saisies par l'utilisateur (conservées dans le navigateur).
+  // Lignes budgétaires saisies par l'utilisateur (conservées dans le navigateur).
   const { listFor, create, counts: subCategoryCounts } = useSubCategories()
 
   const createdBySection = useMemo(() => {
@@ -40,7 +43,7 @@ export default function App() {
     [],
   )
 
-  // Rien n'est proposé d'avance : seules les sous-catégories déjà saisies
+  // Rien n'est proposé d'avance : seules les lignes budgétaires déjà saisies
   // pour la catégorie choisie apparaissent (dès MIN_QUERY_LENGTH lettres).
   const storedSubCategories = useMemo(() => listFor(category), [listFor, category])
 
@@ -68,11 +71,11 @@ export default function App() {
   }
 
   const handleCategoryChange = (nextCategory) => {
-    // La liste des sous-catégories dépend de la catégorie : on la réinitialise.
+    // La liste des lignes budgétaires dépend de la catégorie : on la réinitialise.
     update({ category: nextCategory, subCategory: null })
   }
 
-  /** Crée (si besoin) la sous-catégorie saisie et la renvoie à la liste déroulante. */
+  /** Crée (si besoin) la ligne budgétaire saisie et la renvoie à la liste déroulante. */
   const handleCreateSubCategory = (rawLabel) => {
     if (!selectedCategory) return null
     return create(selectedCategory, rawLabel)
@@ -110,7 +113,7 @@ export default function App() {
         <h1 className="app__title">{BUDGET.organisation}</h1>
         <p className="app__subtitle">
           {BUDGET.entite} — {BUDGET.identification}. Sélectionnez une catégorie budgétaire, sa
-          sous-catégorie puis la date de l’opération.
+          ligne budgétaire puis la date de l’opération.
         </p>
       </header>
 
@@ -118,12 +121,18 @@ export default function App() {
         <article className="stat stat--recette">
           <p className="stat__label">Recettes</p>
           <p className="stat__value">{counts.recettes.categories} catégories</p>
-          <p className="stat__meta">{createdBySection.recettes} sous-catégories saisies</p>
+          <p className="stat__meta">
+            {createdBySection.recettes}{' '}
+            {accord(createdBySection.recettes, 'ligne budgétaire saisie', 'lignes budgétaires saisies')}
+          </p>
         </article>
         <article className="stat stat--depense">
           <p className="stat__label">Dépenses</p>
           <p className="stat__value">{counts.depenses.categories} catégories</p>
-          <p className="stat__meta">{createdBySection.depenses} sous-catégories saisies</p>
+          <p className="stat__meta">
+            {createdBySection.depenses}{' '}
+            {accord(createdBySection.depenses, 'ligne budgétaire saisie', 'lignes budgétaires saisies')}
+          </p>
         </article>
         <article className="stat">
           <p className="stat__label">Exercice budgétaire</p>
@@ -151,15 +160,15 @@ export default function App() {
 
           <SearchableSelect
             id="sous-categorie"
-            label="2. Sous-catégorie"
+            label="2. Lignes budgétaires"
             required
             creatable
             minChars={MIN_QUERY_LENGTH}
             onCreate={handleCreateSubCategory}
-            onCreated={(entry) => setFlash(`Sous-catégorie « ${entry.label} » enregistrée.`)}
-            placeholder={category ? 'Saisir la sous-catégorie' : 'Choisissez une catégorie'}
+            onCreated={(entry) => setFlash(`Ligne budgétaire « ${entry.label} » enregistrée.`)}
+            placeholder={category ? 'Saisir la ligne budgétaire' : 'Choisissez une catégorie'}
             searchPlaceholder={`Saisir au moins ${MIN_QUERY_LENGTH} lettres…`}
-            emptyMessage="Aucune sous-catégorie"
+            emptyMessage="Aucune ligne budgétaire"
             options={subCategoryOptions}
             value={subCategory}
             onChange={(next) => update({ subCategory: next })}
@@ -167,8 +176,8 @@ export default function App() {
             hint={
               selectedCategory
                 ? subCategoryOptions.length > 0
-                  ? `${subCategoryOptions.length} sous-catégorie(s) déjà saisie(s) pour « ${selectedCategory.label} » — suggestions dès ${MIN_QUERY_LENGTH} lettres.`
-                  : `Aucune sous-catégorie pour « ${selectedCategory.label} » : saisissez-la, elle sera créée.`
+                  ? `${subCategoryOptions.length} ${accord(subCategoryOptions.length, 'ligne budgétaire déjà saisie', 'lignes budgétaires déjà saisies')} pour « ${selectedCategory.label} » — suggestions dès ${MIN_QUERY_LENGTH} lettres.`
+                  : `Aucune ligne budgétaire pour « ${selectedCategory.label} » : saisissez-la, elle sera créée.`
                 : 'Choisissez d’abord une catégorie.'
             }
           />
@@ -236,7 +245,7 @@ export default function App() {
             </dd>
           </div>
           <div className="recap__row">
-            <dt>Sous-catégorie</dt>
+            <dt>Lignes budgétaires</dt>
             <dd>
               {selectedSubCategory ? (
                 <>
@@ -246,7 +255,7 @@ export default function App() {
                   </span>
                   <span className="recap__detail">
                     {selectedLine?.createdAt
-                      ? `Sous-catégorie saisie par vous le ${formatFR(selectedLine.createdAt)}`
+                      ? `Ligne budgétaire saisie par vous le ${formatFR(selectedLine.createdAt)}`
                       : selectedLine?.detail}
                   </span>
                 </>
